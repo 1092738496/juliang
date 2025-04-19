@@ -8,7 +8,13 @@ import 'package:path_provider/path_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+
+  final deadline = DateTime(2025, 4, 22); // 超过 4月21日就不能启动
+  final now = DateTime.now();
+  if (now.isAfter(deadline)) {
+  } else {
+    runApp(MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -90,9 +96,7 @@ class _WebViewShellState extends State<WebViewShell> {
 
     setState(() {});
     await Future.delayed(Duration(milliseconds: 100));
-    await _loadBookmark(
-      _defaultUrl
-    );
+    await _loadBookmark(_defaultUrl);
   }
 
   Future<void> _saveBookmarks() async {
