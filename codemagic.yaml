@@ -1,51 +1,49 @@
 workflows:
-  build-macos-app-and-dmg:
-    name: Build macOS app + dmg for 越进创客
+  build-macos-dmg-only:
+    name: Build macOS dmg for 越进创客
     environment:
       flutter: stable
       xcode: latest
+
     scripts:
       - name: Clean & get dependencies
         script: |
           flutter clean
           flutter pub get
 
-      - name: Build macOS App
+      - name: Build macOS App (for DMG only)
         script: |
           flutter build macos --release
 
-      - name: 越进创客.app
+      - name: Create unsigned .dmg
         script: |
           APP_NAME="越进创客"
           BUILD_PATH="build/macos/Build/Products/Release"
           ORIGINAL_APP_PATH="${BUILD_PATH}/demo.app"
-          TARGET_APP_PATH="${BUILD_PATH}/${APP_NAME}.app"
+          TEMP_DIR="dmg_temp"
+          TEMP_APP_PATH="${TEMP_DIR}/${APP_NAME}.app"
+          DMG_NAME="${APP_NAME}_unsigned.dmg"
 
-          echo "🛠 检查构建产物是否存在：$ORIGINAL_APP_PATH"
+          echo "🔍 检查构建产物是否存在：$ORIGINAL_APP_PATH"
           if [ ! -d "$ORIGINAL_APP_PATH" ]; then
             echo "❌ 未找到 $ORIGINAL_APP_PATH"
             ls -lh ${BUILD_PATH}
             exit 1
           fi
 
-          cp -R "$ORIGINAL_APP_PATH" "$TARGET_APP_PATH"
+          mkdir -p "${TEMP_DIR}"
+          cp -R "${ORIGINAL_APP_PATH}" "${TEMP_APP_PATH}"
 
-      - name: Create .dmg (未签名)
+          echo "📦 创建 DMG：$DMG_NAME"
+          hdiutil create "$DMG_NAME" -volname "$APP_NAME" -srcfolder "${TEMP_DIR}" -ov -format UDZO
+
+          # 清理中间文件（可选）
+          rm -rf "${TEMP_DIR}"
+
+      - name: List DMG Output
         script: |
-          APP_NAME="越进创客"
-          BUILD_PATH="build/macos/Build/Products/Release"
-          DMG_NAME="${APP_NAME}_unsigned.dmg"
-
-          mkdir -p dmg_temp
-          cp -R "${BUILD_PATH}/${APP_NAME}.app" dmg_temp/
-          hdiutil create "$DMG_NAME" -volname "$APP_NAME" -srcfolder dmg_temp -ov -format UDZO
-
-      - name: Output artifacts
-        script: |
-          echo "✅ 打包完成："
-          ls -lh build/macos/Build/Products/Release/越进创客.app
-          ls -lh 越进创客_unsigned.dmg
+          echo "✅ 打包完成，仅输出以下 DMG 文件："
+          ls -lh *.dmg
 
     artifacts:
-      - build/macos/Build/Products/Release/越进创客.app
       - 越进创客_unsigned.dmg
